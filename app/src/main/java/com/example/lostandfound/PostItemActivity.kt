@@ -2,8 +2,11 @@ package com.example.lostandfound
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build.VERSION_CODES.N
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
+import android.provider.MediaStore.Images.Media
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -20,17 +23,20 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
+import com.google.firebase.storage.ktx.storageMetadata
 import java.net.URI
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom.current
+import java.util.jar.Attributes.Name
+
 
 class PostItemActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
     private lateinit var storage: FirebaseStorage
     private lateinit var uri5: Uri
-    private lateinit var downloadurl:String
-
-
+    private lateinit var downloadurl: String
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,459 +55,74 @@ class PostItemActivity : AppCompatActivity() {
         val selectImagesBtn = findViewById<Button>(R.id.Post_Item_Select_Image_Button)
         val postFoundBtn = findViewById<Button>(R.id.Post_Found_Button)
         val postLostBtn = findViewById<Button>(R.id.Post_Lost_Button)
-        var count =0
+        var count = 0
         var currentUserName = ""
         var currentUserPhone = ""
-
-        val gallery = registerForActivityResult(ActivityResultContracts.GetContent()) {uri : Uri? ->
-            if (uri != null) {
-                uri5 = uri
-            }
-        }
-
 
         progressBar.visibility = View.VISIBLE
 
         database.reference.child("users").child(currentUserUid).get().addOnSuccessListener {
-            currentUserName  = it.child("name").value.toString()
+            currentUserName = it.child("name").value.toString()
             currentUserPhone = it.child("phone").value.toString()
             findViewById<EditText>(R.id.Post_Item_Name).setText(currentUserName)
             findViewById<EditText>(R.id.Post_Item_Phone_No).setText(currentUserPhone)
             progressBar.visibility = View.GONE
         }
 
-        selectImagesBtn.setOnClickListener{
-            gallery.launch("image/*")
-                findViewById<ImageView>(R.id.image1).visibility = View.VISIBLE
-                findViewById<ImageView>(R.id.image1).setImageURI(uri5)
-        }
+        selectImagesBtn.setOnClickListener(View.OnClickListener {
+            val imageSelectIntent =
+                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            startActivityForResult(imageSelectIntent, 3)
+        })
 
         postFoundBtn.setOnClickListener {
             progressBar.visibility = View.VISIBLE
+            uploadImage(currentUserName,currentUserPhone,"Found",currentUserUid,uri5)
 
-            val status: String = "Found"
-
-            storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-                    .addOnSuccessListener { task ->
-                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-                            val d = it.toString()
-                            downloadurl = d
-                        }
-                    }
-            val detailsOfPost = hashMapOf(
-                "name" to currentUserName,
-                "phone" to currentUserPhone,
-                "status" to status,
-                "uid" to currentUserUid,
-                "downloadurl" to downloadurl
-            )
-
-            db.collection("ItemsList").add(detailsOfPost)
-                .addOnSuccessListener {
-                    progressBar.visibility = View.GONE
-                    Toast.makeText(this, "Item Posted", Toast.LENGTH_LONG).show()
-                }
-                .addOnFailureListener{
-                    progressBar.visibility = View.GONE
-                    Toast.makeText(this, "Something Went Wrong", Toast.LENGTH_LONG).show()
-                }
         }
 
         postLostBtn.setOnClickListener {
             progressBar.visibility = View.VISIBLE
+            uploadImage(currentUserName,currentUserPhone,"Lost",currentUserUid,uri5)
+        }
 
-            val status: String = "Lost"
+    }
 
-            storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-                .addOnSuccessListener { task ->
-                    task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-                        val d = it.toString()
-                        downloadurl = d
-                    }
-                }
+
+        override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+            super.onActivityResult(requestCode, resultCode, data)
+            if (resultCode == RESULT_OK && data != null) {
+                uri5 = data.data!!
+                findViewById<ImageView>(R.id.image1).visibility = View.VISIBLE
+                findViewById<ImageView>(R.id.image1).setImageURI(uri5)
+            }
+        }
+
+        private fun uploadImage(cu:String,ph:String,s:String,ui:String,ur: Uri) {
+            val formatter = SimpleDateFormat("yyyy_MM_DD_HH_mm_ss", Locale.getDefault())
+            val now = Date()
+            val filename = formatter.format(now)
+            val storageReference = FirebaseStorage.getInstance().getReference("Images/$filename")
+            storageReference.putFile(uri5)
+
             val detailsOfPost = hashMapOf(
-                "name" to currentUserName,
-                "phone" to currentUserPhone,
-                "status" to status,
-                "uid" to currentUserUid,
-                "downloadurl" to downloadurl
+                "uploadedBy" to cu,
+                "phone" to ph,
+                "status" to s,
+                "uid" to ui,
+                "fileName" to filename,
             )
 
-            db.collection("ItemsList").add(detailsOfPost)
+            Firebase.firestore.collection("ItemsList").add(detailsOfPost)
                 .addOnSuccessListener {
-                    progressBar.visibility = View.GONE
                     Toast.makeText(this, "Item Posted", Toast.LENGTH_LONG).show()
                 }
                 .addOnFailureListener{
-                    progressBar.visibility = View.GONE
                     Toast.makeText(this, "Something Went Wrong", Toast.LENGTH_LONG).show()
                 }
+
+            findViewById<ProgressBar>(R.id.Post_Item_Progerss_Bar).visibility = View.GONE
+
         }
 
-
-//        selectImagesBtn.setOnClickListener{
-//            if(count ==0) {
-//                count++
-//                gallery.launch("image/*")
-//                uri5 = uri
-//                findViewById<ImageView>(R.id.image1).visibility = View.VISIBLE
-//                findViewById<ImageView>(R.id.image1).setImageURI(uri5)
-//            }
-//            else if(count ==1) {
-//                count++
-//                gallery.launch("image/*")
-//                uri1= uri
-//                findViewById<ImageView>(R.id.image2).visibility = View.VISIBLE
-//                findViewById<ImageView>(R.id.image2).setImageURI(uri1)
-//            }
-//            else if(count ==2) {
-//                count++
-//                gallery.launch("image/*")
-//                uri2 = uri
-//                findViewById<ImageView>(R.id.image3).visibility = View.VISIBLE
-//                findViewById<ImageView>(R.id.image3).setImageURI(uri2)
-//            }
-//            else if(count ==3) {
-//                count++
-//                gallery.launch("image/*")
-//                uri3 = uri
-//                findViewById<ImageView>(R.id.image4).visibility = View.VISIBLE
-//                findViewById<ImageView>(R.id.image4).setImageURI(uri3)
-//            }
-//            else if(count ==4) {
-//                count++
-//                gallery.launch("image/*")
-//                uri4 = uri
-//                findViewById<ImageView>(R.id.image5).visibility = View.VISIBLE
-//                findViewById<ImageView>(R.id.image5).setImageURI(uri4)
-//            }
-//            else
-//            {
-//                Toast.makeText(this, "Max 5 Images can be Uploaded", Toast.LENGTH_LONG).show()
-//            }
-//            val intent = Intent(this, PostItemActivity::class.java)
-//            startActivity(intent)
-//        }
-//
-//
-//        postFoundBtn.setOnClickListener{
-//            progressBar.visibility = View.VISIBLE
-//
-//            val status: String = "Found"
-//            if(count == 1)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 2)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 3)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri2)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 4)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri2)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri3)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 5)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri2)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri3)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri4)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//
-//            val detailsOfPost = hashMapOf(
-//                "name" to currentUserName,
-//                "phone" to currentUserPhone,
-//                "status" to status,
-//                "uid" to currentUserUid,
-//                "downloadurl" to downloadurl
-//            )
-//
-//            db.collection("ItemsList").add(detailsOfPost)
-//                .addOnSuccessListener {
-//                    progressBar.visibility = View.GONE
-//                    Toast.makeText(this, "Item Posted", Toast.LENGTH_LONG).show()
-//                }
-//                .addOnFailureListener{
-//                    progressBar.visibility = View.GONE
-//                    Toast.makeText(this, "Something Went Wrong", Toast.LENGTH_LONG).show()
-//                }
-//
-//        }
-//
-//
-//        postLostBtn.setOnClickListener{
-//            progressBar.visibility = View.VISIBLE
-//            val status = "Lost"
-//
-//            if(count == 1)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 2)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 3)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri2)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 4)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri2)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri3)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//            if(count == 5)
-//            {
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri5)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri1)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri2)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri3)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//                storageref.child(System.currentTimeMillis().toString()).putFile(uri4)
-//                    .addOnSuccessListener { task ->
-//                        task.metadata!!.reference!!.downloadUrl.addOnSuccessListener {
-//                            val d = it.toString()
-//                            downloadurl.add(d)
-//                        }
-//
-//                    }
-//            }
-//
-//            val detailsOfPost = hashMapOf(
-//                "name" to currentUserName,
-//                "phone" to currentUserPhone,
-//                "status" to status,
-//                "uid" to currentUserUid,
-//                "downloadurl" to downloadurl
-//            )
-//
-//            db.collection("ItemsList").add(detailsOfPost)
-//                .addOnSuccessListener {
-//                    progressBar.visibility = View.GONE
-//                    Toast.makeText(this, "Item Posted", Toast.LENGTH_LONG).show()
-//                }
-//                .addOnFailureListener{
-//                    progressBar.visibility = View.GONE
-//                    Toast.makeText(this, "Something Went Wrong", Toast.LENGTH_LONG).show()
-//                }
-//        }
-    }
 }
