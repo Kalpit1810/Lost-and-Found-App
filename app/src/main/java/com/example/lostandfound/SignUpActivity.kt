@@ -96,13 +96,14 @@ class SignUpActivity : AppCompatActivity() {
             }else{
                 auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener{
                     if(it.isSuccessful){
+
                         val databaseRef = database.reference.child(  "users").child(auth.currentUser!!.uid)
                         val users: Users = Users (name,roll_no, email, password, phone, auth.currentUser!!.uid)
+
                         databaseRef.setValue(users).addOnCompleteListener {
                             if(it.isSuccessful){
-
-                                Toast.makeText(this,"An verification Email is sent",Toast.LENGTH_LONG).show()
                                 Firebase.auth.currentUser?.sendEmailVerification()?.addOnSuccessListener {
+                                    Toast.makeText(this,"An verification Email is sent",Toast.LENGTH_LONG).show()
                                     val intent = Intent(  this, MainActivity::class.java)
                                     startActivity(intent)
                                 }

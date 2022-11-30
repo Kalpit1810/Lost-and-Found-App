@@ -75,6 +75,10 @@ class UpdatePasswordActivity : AppCompatActivity() {
                     if(task.isSuccessful) {
                         currentUser!!.updatePassword(newPassword).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
+                                val childUpdates = hashMapOf<String, Any>(
+                                    "password" to newPassword
+                                )
+                                database.reference.child("users").child(auth.currentUser!!.uid).updateChildren(childUpdates)
                                 updatePassPrgressbar.visibility = View.GONE
                                 Toast.makeText(this, "Password Updated successfully", Toast.LENGTH_LONG).show()
                             } else {
