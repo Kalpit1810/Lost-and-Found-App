@@ -26,7 +26,7 @@ class LandingPageActivity : AppCompatActivity() {
         }
 
         checkItemsBtn.setOnClickListener{
-            val intent = Intent(this, UpdatePasswordActivity::class.java)
+            val intent = Intent(this, CheckItemActivity::class.java)
             startActivity(intent)
         }
 

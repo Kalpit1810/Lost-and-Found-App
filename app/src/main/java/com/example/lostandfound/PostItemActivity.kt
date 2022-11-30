@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build.VERSION_CODES.N
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.provider.MediaStore.Images.Media
 import android.view.View
@@ -24,6 +25,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import com.google.firebase.storage.ktx.storageMetadata
+import org.checkerframework.checker.units.qual.m
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.*
@@ -50,6 +52,7 @@ class PostItemActivity : AppCompatActivity() {
         val db = Firebase.firestore
         val currentUser = auth.currentUser
         val currentUserUid = currentUser?.uid.toString()
+        var currentUserEmail = ""
         val progressBar = findViewById<ProgressBar>(R.id.Post_Item_Progerss_Bar)
         val storageref = storage.reference
         val selectImagesBtn = findViewById<Button>(R.id.Post_Item_Select_Image_Button)
@@ -64,6 +67,7 @@ class PostItemActivity : AppCompatActivity() {
         database.reference.child("users").child(currentUserUid).get().addOnSuccessListener {
             currentUserName = it.child("name").value.toString()
             currentUserPhone = it.child("phone").value.toString()
+            currentUserEmail = it.child("email").value.toString()
             findViewById<EditText>(R.id.Post_Item_Name).setText(currentUserName)
             findViewById<EditText>(R.id.Post_Item_Phone_No).setText(currentUserPhone)
             progressBar.visibility = View.GONE
@@ -75,15 +79,32 @@ class PostItemActivity : AppCompatActivity() {
             startActivityForResult(imageSelectIntent, 3)
         })
 
+        val message = findViewById<EditText>(R.id.Post_Item_Message).text.toString()
+
         postFoundBtn.setOnClickListener {
-            progressBar.visibility = View.VISIBLE
-            uploadImage(currentUserName,currentUserPhone,"Found",currentUserUid,uri5)
+            if(findViewById<EditText>(R.id.Post_Item_Phone_No).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Name).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Location).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Message).text.toString().isEmpty())
+            {
+                Toast.makeText(this,"Please Fill all Areas", Toast.LENGTH_LONG).show()
+            }
+            else{
+                progressBar.visibility = View.VISIBLE
+                val message = findViewById<EditText>(R.id.Post_Item_Message).text.toString()
+                uploadImage(currentUserName,currentUserPhone,"Found",currentUserUid,currentUserEmail,message,uri5)
+            }
 
         }
 
         postLostBtn.setOnClickListener {
-            progressBar.visibility = View.VISIBLE
-            uploadImage(currentUserName,currentUserPhone,"Lost",currentUserUid,uri5)
+            if(findViewById<EditText>(R.id.Post_Item_Phone_No).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Name).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Location).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Message).text.toString().isEmpty())
+            {
+                Toast.makeText(this,"Please Fill all Areas", Toast.LENGTH_LONG).show()
+            }
+            else
+            {
+                progressBar.visibility = View.VISIBLE
+                val message = findViewById<EditText>(R.id.Post_Item_Message).text.toString()
+                uploadImage(currentUserName, currentUserPhone, "Lost", currentUserUid,currentUserEmail,message,uri5)
+            }
         }
 
     }
@@ -98,7 +119,7 @@ class PostItemActivity : AppCompatActivity() {
             }
         }
 
-        private fun uploadImage(cu:String,ph:String,s:String,ui:String,ur: Uri) {
+        private fun uploadImage(cu:String,ph:String,s:String, em:String,ui:String,m:String,ur: Uri) {
             val formatter = SimpleDateFormat("yyyy_MM_DD_HH_mm_ss", Locale.getDefault())
             val now = Date()
             val filename = formatter.format(now)
@@ -110,6 +131,8 @@ class PostItemActivity : AppCompatActivity() {
                 "phone" to ph,
                 "status" to s,
                 "uid" to ui,
+                "Email" to em,
+                "message" to m,
                 "fileName" to filename,
             )
 

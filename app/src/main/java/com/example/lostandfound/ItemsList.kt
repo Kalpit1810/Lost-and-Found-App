@@ -1,9 +1,11 @@
 package com.example.lostandfound
 
 data class ItemsList(
-    var name: String? = null,
+    var filename: String? = null,
     var phone : String? = null,
     var status: String? = null,
     var uid: String? = null,
-    var downloadurl: String? = null
+    var email:String? = null,
+    var message:String? = null,
+    var uploadedBy: String? = null
 )
