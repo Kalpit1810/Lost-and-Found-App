@@ -49,13 +49,11 @@ class CheckItemActivity : AppCompatActivity() {
 
         lostItemsListBtn.setOnClickListener{
             itemArrayList.clear()
-            findViewById<Button>(R.id.Check_post_layout_button).setText("Found It")
             EventChangeListener("Lost")
         }
 
         FoundItemsListBtn.setOnClickListener{
             itemArrayList.clear()
-            findViewById<Button>(R.id.Check_post_layout_button).setText("Claim It")
             EventChangeListener("Found")
         }
 
