@@ -6,6 +6,7 @@ import android.os.Build.VERSION_CODES.N
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.MediaStore
 import android.provider.MediaStore.Images.Media
 import android.view.View
@@ -16,6 +17,7 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.isVisible
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -82,20 +84,20 @@ class PostItemActivity : AppCompatActivity() {
         val message = findViewById<EditText>(R.id.Post_Item_Message).text.toString()
 
         postFoundBtn.setOnClickListener {
-            if(findViewById<EditText>(R.id.Post_Item_Phone_No).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Name).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Location).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Message).text.toString().isEmpty())
+            if(findViewById<EditText>(R.id.Post_Item_Phone_No).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Name).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Location).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Message).text.toString().isEmpty() || !findViewById<ImageView>(R.id.image1).isVisible)
             {
                 Toast.makeText(this,"Please Fill all Areas", Toast.LENGTH_LONG).show()
             }
             else{
                 progressBar.visibility = View.VISIBLE
                 val message = findViewById<EditText>(R.id.Post_Item_Message).text.toString()
-                uploadImage(currentUserName,currentUserPhone,"Found",currentUserUid,currentUserEmail,message,uri5)
+                uploadImage(currentUserName,currentUserPhone,"Found",currentUserEmail,currentUserUid,message,uri5)
             }
 
         }
 
         postLostBtn.setOnClickListener {
-            if(findViewById<EditText>(R.id.Post_Item_Phone_No).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Name).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Location).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Message).text.toString().isEmpty())
+            if(findViewById<EditText>(R.id.Post_Item_Phone_No).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Name).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Location).text.toString().isEmpty() || findViewById<EditText>(R.id.Post_Item_Message).text.toString().isEmpty() || !findViewById<ImageView>(R.id.image1).isVisible)
             {
                 Toast.makeText(this,"Please Fill all Areas", Toast.LENGTH_LONG).show()
             }
@@ -103,7 +105,7 @@ class PostItemActivity : AppCompatActivity() {
             {
                 progressBar.visibility = View.VISIBLE
                 val message = findViewById<EditText>(R.id.Post_Item_Message).text.toString()
-                uploadImage(currentUserName, currentUserPhone, "Lost", currentUserUid,currentUserEmail,message,uri5)
+                uploadImage(currentUserName, currentUserPhone, "Lost",currentUserEmail, currentUserUid,message,uri5)
             }
         }
 

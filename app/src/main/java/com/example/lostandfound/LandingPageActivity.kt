@@ -21,7 +21,7 @@ class LandingPageActivity : AppCompatActivity() {
         }
 
         myPostsBtn.setOnClickListener{
-            val intent = Intent(this, UpdatePasswordActivity::class.java)
+            val intent = Intent(this, MyPostActivity ::class.java)
             startActivity(intent)
         }
 
