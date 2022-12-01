@@ -8,10 +8,14 @@ import android.widget.TextView
 import androidx.appcompat.view.menu.MenuView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.GlideContext
+import com.google.firebase.database.core.Context
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
 import java.util.jar.Attributes.Name
 
-class LostItemsAdapter(private val lostItemList:ArrayList<ItemsList>): RecyclerView.Adapter<LostItemsAdapter.myViewHolder>(){
+class LostItemsAdapter(private val context:android.content.Context, private val lostItemList:ArrayList<ItemsList>): RecyclerView.Adapter<LostItemsAdapter.myViewHolder>(){
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): myViewHolder {
 
@@ -22,13 +26,13 @@ class LostItemsAdapter(private val lostItemList:ArrayList<ItemsList>): RecyclerV
 
     override fun onBindViewHolder(holder: myViewHolder, position: Int) {
         val currentitem = lostItemList[position]
-        val imageReference = FirebaseStorage.getInstance().getReference().child("images/${currentitem.filename}")
+        val imageReference = Firebase.storage.reference.child("images/${currentitem.filename}")
 
         holder.Name.text =currentitem.uploadedBy
         holder.Phone.text = currentitem.phone
         holder.message.text = currentitem.message
 
-        Glide.with(holder.image).load(imageReference).into(holder.image)
+        Glide.with(context).load(imageReference).fitCenter().into(holder.image)
 
     }
 

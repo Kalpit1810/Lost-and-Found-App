@@ -42,7 +42,7 @@ class CheckItemActivity : AppCompatActivity() {
 
         itemArrayList = arrayListOf<ItemsList>()
 
-        myAdapter= LostItemsAdapter(itemArrayList)
+        myAdapter= LostItemsAdapter(this,itemArrayList)
         itemRecyclerView.adapter = myAdapter
 
         EventChangeListener("Lost")
